@@ -1,0 +1,38 @@
+version: '3.9'
+
+services:
+  # ── API Python (FastAPI) ───────────────────────────────────────────────────
+  backend:
+    build: ./backend
+    container_name: iptu_backend
+    restart: unless-stopped
+    volumes:
+      - iptu_data:/app/data          # PDFs, banco SQLite, uploads temporários
+    environment:
+      - PYTHONUNBUFFERED=1
+    networks:
+      - iptu_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  # ── Frontend React (build estático servido via nginx) ─────────────────────
+  frontend:
+    build: ./frontend
+    container_name: iptu_frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"        # acesso externo: http://localhost
+    depends_on:
+      - backend
+    networks:
+      - iptu_net
+
+volumes:
+  iptu_data:           # persistência dos PDFs e banco SQLite
+
+networks:
+  iptu_net:
+    driver: bridge
